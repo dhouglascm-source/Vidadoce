@@ -1,0 +1,43 @@
+name: Gerar APK VidaDoce
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar projeto
+        uses: actions/checkout@v6
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Extrair projeto VidaDoce
+        run: |
+          mkdir -p projeto
+          ZIP=$(find . -maxdepth 1 -type f -name "*.zip" | head -n 1)
+          unzip -q "$ZIP" -d projeto
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Compilar APK
+        run: |
+          ROOT=$(dirname "$(find projeto -type f -name "settings.gradle" | head -n 1)")
+          gradle -p "$ROOT" assembleDebug
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: VidaDoce-APK
+          path: projeto/**/app/build/outputs/apk/debug/*.apk
